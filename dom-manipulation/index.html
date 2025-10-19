@@ -37,6 +37,17 @@
     <!-- JS will insert the dynamic Add Quote form here -->
     <div id="addQuoteMount"></div>
   </div>
+  <div class="row" style="margin-top: 1rem; gap:.5rem; display:flex; flex-wrap:wrap;">
+    <button id="showLast" type="button" title="Show last viewed quote for this tab">Show Last Viewed</button>
+  
+    <button id="exportJson" type="button" title="Export quotes to JSON">Export JSON</button>
+  
+    <label for="importFile" style="display:inline-flex; align-items:center; gap:.5rem;">
+      <span>Import JSON:</span>
+      <input type="file" id="importFile" accept=".json" onchange="importFromJsonFile(event)"/>
+    </label>
+  </div>
+  
 
   <script src="script.js"></script>
 </body>
