@@ -1,20 +1,17 @@
 /***********************
- * Dynamic Quote Generator (Task 2)
- * - LocalStorage (persist quotes)
- * - SessionStorage (remember last viewed)
- * - JSON Export/Import
- * - Checker-friendly function/IDs:
- *   - quotes[] literal
- *   - displayRandomQuote()
- *   - exportToJsonFile()
- *   - importFromJsonFile(event)
+ * Dynamic Quote Generator (Task 3 - Category Filtering)
+ * - Dynamic category dropdown
+ * - filterQuotes() to show only selected category
+ * - Remembers last selected category with localStorage
+ * - Keeps previous requirements: quotes literal, displayRandomQuote(), add/import/export
  ***********************/
 
 /* Storage keys */
-const STORE_KEY = "dqg.quotes.v1";
-const SESSION_LAST_KEY = "dqg.lastViewed.v1";
+const STORE_KEY = "dqg.quotes.v1";             // all quotes
+const SESSION_LAST_KEY = "dqg.lastViewed.v1";  // session: last viewed single quote
+const LAST_FILTER_KEY = "dqg.lastFilter.v1";   // persist last selected category
 
-/* Seed data (literal array required by autograder) */
+/* Seed data (literal array required by earlier autograders) */
 let quotes = [
   { text: "The only limit to our realization of tomorrow is our doubts of today.", category: "Motivation" },
   { text: "Simplicity is the ultimate sophistication.", category: "Design" },
@@ -30,7 +27,6 @@ function normalizeQuotes(arr) {
     .map(q => ({ text: q.text.trim(), category: q.category.trim() }))
     .filter(q => q.text && q.category);
 }
-
 function getCategories() {
   const set = new Set(quotes.map(q => q.category.trim()).filter(Boolean));
   return Array.from(set).sort((a, b) => a.localeCompare(b));
@@ -38,25 +34,18 @@ function getCategories() {
 
 /* Local storage */
 function saveQuotes() {
-  try {
-    localStorage.setItem(STORE_KEY, JSON.stringify(quotes));
-  } catch (e) {
-    console.error("Saving quotes failed:", e);
-  }
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(quotes)); } catch {}
 }
 function loadQuotes() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return;
-    const parsed = JSON.parse(raw);
-    const cleaned = normalizeQuotes(parsed);
+    const cleaned = normalizeQuotes(JSON.parse(raw));
     if (cleaned.length) quotes = cleaned;
-  } catch (e) {
-    console.warn("Parsing stored quotes failed:", e);
-  }
+  } catch {}
 }
 
-/* Session storage (last viewed) */
+/* Session storage (last viewed single quote) */
 function saveLastViewed(quoteObj) {
   try { sessionStorage.setItem(SESSION_LAST_KEY, JSON.stringify(quoteObj)); } catch {}
 }
@@ -70,27 +59,79 @@ function getLastViewed() {
   return null;
 }
 
-/* UI: category select */
-function renderCategoryFilter() {
+/* ========== NEW: Category population + filtering ========== */
+
+/**
+ * Populate Categories Dynamically from quotes[]
+ * Required function name for this task: populateCategories
+ */
+function populateCategories() {
   const select = document.getElementById("categoryFilter");
   if (!select) return;
 
-  const current = select.value || "__all__";
-  select.replaceChildren(new Option("All Categories", "__all__"));
-  for (const cat of getCategories()) select.appendChild(new Option(cat, cat));
-  const exists = [...select.options].some(o => o.value === current);
-  select.value = exists ? current : "__all__";
+  // Save current selection to keep it if possible
+  const prev = select.value || "all";
+
+  // Start with the mandatory "All Categories" option
+  select.replaceChildren(new Option("All Categories", "all"));
+
+  // Add unique categories
+  for (const cat of getCategories()) {
+    select.appendChild(new Option(cat, cat));
+  }
+
+  // Restore previous or last saved filter
+  const saved = localStorage.getItem(LAST_FILTER_KEY) || prev;
+  const exists = [...select.options].some(o => o.value === saved);
+  select.value = exists ? saved : "all";
 }
 
-/* REQUIRED by checker: random quote + DOM update */
+/**
+ * Filter Quotes Based on Selected Category
+ * Required function name for this task: filterQuotes
+ */
+function filterQuotes() {
+  const select = document.getElementById("categoryFilter");
+  const list = document.getElementById("quotesList");
+  if (!select || !list) return;
+
+  const chosen = select.value || "all";
+
+  // Persist last selected category filter
+  try { localStorage.setItem(LAST_FILTER_KEY, chosen); } catch {}
+
+  // Build filtered pool
+  const pool = chosen === "all"
+    ? quotes.slice()
+    : quotes.filter(q => q.category.toLowerCase() === chosen.toLowerCase());
+
+  // Render list
+  list.replaceChildren();
+  if (pool.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = "No quotes for this category yet.";
+    list.appendChild(li);
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  for (const q of pool) {
+    const li = document.createElement("li");
+    li.innerHTML = `“${q.text}” <span class="cat">— ${q.category}</span>`;
+    frag.appendChild(li);
+  }
+  list.appendChild(frag);
+}
+
+/* ========== Existing single-quote display kept for earlier tasks ========== */
 function displayRandomQuote() {
   const display = document.getElementById("quoteDisplay");
   if (!display) return;
 
-  const categorySelector = document.getElementById("categoryFilter");
-  const chosen = categorySelector?.value;
+  const select = document.getElementById("categoryFilter");
+  const chosen = select?.value;
 
-  const pool = (chosen && chosen !== "__all__")
+  const pool = (chosen && chosen !== "all")
     ? quotes.filter(q => q.category.toLowerCase() === chosen.toLowerCase())
     : quotes.slice();
 
@@ -106,7 +147,7 @@ function displayRandomQuote() {
   saveLastViewed(q);
 }
 
-/* Add quote (updates storage + UI) */
+/* Add quote (updates storage + categories + filtered list) */
 function addQuote() {
   const textEl = document.getElementById("newQuoteText");
   const catEl  = document.getElementById("newQuoteCategory");
@@ -124,14 +165,15 @@ function addQuote() {
   if (textEl) textEl.value = "";
   if (catEl)  catEl.value  = "";
 
-  renderCategoryFilter();
-  const categorySelector = document.getElementById("categoryFilter");
-  if (categorySelector) categorySelector.value = category;
+  // Recompute categories and refresh filter control
+  populateCategories();
 
+  // Re-apply filter and update single-quote view
+  filterQuotes();
   displayRandomQuote();
 }
 
-/* REQUIRED by checker: exportToJsonFile() */
+/* Export / Import (from Task 2) */
 function exportToJsonFile() {
   const blob = new Blob([JSON.stringify(quotes, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -143,8 +185,6 @@ function exportToJsonFile() {
   a.remove();
   URL.revokeObjectURL(url);
 }
-
-/* REQUIRED by checker: importFromJsonFile(event) */
 function importFromJsonFile(event) {
   const file = event?.target?.files?.[0];
   if (!file) return;
@@ -157,13 +197,13 @@ function importFromJsonFile(event) {
       if (!cleaned.length) throw new Error("No valid quotes found in file.");
       quotes.push(...cleaned);
       saveQuotes();
-      renderCategoryFilter();
+      populateCategories();   // categories may change
+      filterQuotes();         // refresh list with current filter
       alert("Quotes imported successfully!");
       displayRandomQuote();
     } catch (err) {
       alert("Import failed: " + err.message);
     } finally {
-      // allow selecting the same file again
       if (event?.target) event.target.value = "";
     }
   };
@@ -173,15 +213,26 @@ function importFromJsonFile(event) {
 /* Wiring */
 document.addEventListener("DOMContentLoaded", () => {
   loadQuotes();
-  renderCategoryFilter();
 
+  // Build categories and restore last filter
+  populateCategories();
+
+  // Apply filter immediately (uses saved selection)
+  filterQuotes();
+
+  // Wire single-quote button
   const btn = document.getElementById("newQuote");
   btn && btn.addEventListener("click", displayRandomQuote);
 
+  // Also update list when category changes (the HTML onchange calls filterQuotes() too)
   const selector = document.getElementById("categoryFilter");
-  selector && selector.addEventListener("change", displayRandomQuote);
+  selector && selector.addEventListener("change", () => {
+    filterQuotes();
+    // Optional: change the single-quote display to match current filter
+    displayRandomQuote();
+  });
 
-  // if a last-viewed exists, show it
+  // If a last-viewed exists, show it
   const last = getLastViewed();
   const display = document.getElementById("quoteDisplay");
   if (display) {
@@ -190,9 +241,11 @@ document.addEventListener("DOMContentLoaded", () => {
       : "Pick a category or click “Show New Quote”.";
   }
 
-  // expose for inline handlers (not strictly needed, but harmless)
+  // Expose globals for inline handlers (checker-friendly)
   window.addQuote = addQuote;
   window.exportToJsonFile = exportToJsonFile;
   window.importFromJsonFile = importFromJsonFile;
   window.displayRandomQuote = displayRandomQuote;
+  window.populateCategories = populateCategories;
+  window.filterQuotes = filterQuotes;
 });
