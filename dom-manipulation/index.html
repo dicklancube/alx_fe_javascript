@@ -11,19 +11,33 @@
     input, select, button { padding: .4rem .6rem; }
     #quotesList li { margin: .25rem 0; }
     #quotesList .cat { font-size: .85rem; opacity: .7; }
+    .banner { display:none; align-items:center; gap:.5rem; padding:.6rem .8rem; border-radius:.5rem; }
+    .banner.info { background:#eef6ff; border:1px solid #c9e1ff; }
+    .banner.warn { background:#fff5e6; border:1px solid #ffd9a8; }
+    .muted { opacity:.7; }
   </style>
 </head>
 <body>
   <h1>Dynamic Quote Generator</h1>
 
-  <!-- Category Filter (uses required onchange) -->
+  <!-- Sync status + controls -->
+  <div id="syncBanner" class="banner info">
+    <span id="syncMessage">Synced.</span>
+    <button id="reviewConflictsBtn" style="display:none;" type="button">Review Conflicts</button>
+    <span class="muted" id="lastSyncAt"></span>
+  </div>
+  <div class="row" style="margin-bottom:1rem;">
+    <button id="syncNowBtn" type="button" title="Sync with server now">Sync Now</button>
+    <span class="muted">Auto-sync runs every 30s</span>
+  </div>
+
+  <!-- Category Filter -->
   <div class="row">
     <label for="categoryFilter">Category:</label>
+    <!-- per task: onchange uses filterQuote() -->
     <select id="categoryFilter" onchange="filterQuote()">
       <option value="all">All Categories</option>
-      <!-- Dynamically populated -->
     </select>
-
     <button id="newQuote" type="button">Show New Quote</button>
   </div>
 
