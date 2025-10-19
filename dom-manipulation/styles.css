@@ -1,0 +1,11 @@
+
+    body { font-family: system-ui, Arial, sans-serif; margin: 2rem; line-height: 1.5; }
+    #app { display: grid; gap: 1rem; max-width: 800px; }
+    .row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+    .quote-card { padding: 1rem; border: 1px solid #ddd; border-radius: .75rem; }
+    .badge { display: inline-block; padding: .25rem .5rem; border-radius: 999px; border: 1px solid #ccc; font-size: .8rem; }
+    .sr-only { position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+    fieldset { border: 1px solid #eee; border-radius: .5rem; padding: 1rem; }
+    legend { padding: 0 .35rem; font-weight: 600; }
+    button { cursor: pointer; }
+  

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dynamic Quote Generator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>Dynamic Quote Generator</h1>
+
+  <div id="app">
+    <!-- Controls -->
+    <div id="controls" class="row" aria-label="Controls">
+      <label for="categoryFilter">Category:</label>
+      <select id="categoryFilter" name="categoryFilter" aria-label="Filter quotes by category">
+        <option value="__all__">All Categories</option>
+        <!-- options are injected dynamically -->
+      </select>
+
+      <button id="newQuote" type="button">Show New Quote</button>
+    </div>
+
+    <!-- Quote Display -->
+    <div id="quoteDisplay" class="quote-card" role="region" aria-live="polite" aria-atomic="true">
+      <em>Pick a category or click “Show New Quote”.</em>
+    </div>
+
+    <!-- (Spec shows inline form; we’ll create it dynamically from JS, but this block is here
+         if you want to see the static version; it’ll be replaced/enhanced by JS.) -->
+    <div id="staticAddForm" hidden>
+      <input id="newQuoteText" type="text" placeholder="Enter a new quote" />
+      <input id="newQuoteCategory" type="text" placeholder="Enter quote category" />
+      <button onclick="addQuote()">Add Quote</button>
+    </div>
+
+    <!-- JS will insert the dynamic Add Quote form here -->
+    <div id="addQuoteMount"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
